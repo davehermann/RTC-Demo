@@ -1,0 +1,13 @@
+{
+  "name": "rtc-data",
+  "version": "0.1.0",
+  "description": "Connect via WebRTC",
+  "devDependencies": {
+    "live-server": "^1.2.1"
+  },
+  "scripts": {
+    "test": "live-server --no-browser --entry-file=./page.html"
+  },
+  "author": "Dave Hermann",
+  "license": "ISC"
+}
