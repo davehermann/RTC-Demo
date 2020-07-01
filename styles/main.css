@@ -1,4 +1,4 @@
-.arrange { }
+.arrange { justify-content: space-around; }
 .column { display: flex; flex-direction: column; }
 .grow { flex-grow: 1; }
 .page_container { display: flex; }
