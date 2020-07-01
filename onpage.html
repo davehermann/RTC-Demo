@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <link rel="stylesheet" href="styles/main.css" />
+        <script type="module" src="modules/app.js"></script>
+    </head>
+
+    <body>
+        <div class="page_container column">
+            <div class="row">
+                <button type="button" id="btnConnect">Connect</button>
+                <button type="button" id="btnDisconnect" disabled>Disconnect</button>
+            </div>
+
+            <div class="row">
+                <label>Enter a message:
+                    <input type="text" id="txtMessage" placeholder="Message text" disabled />
+                </label>
+                <button type="button" id="btnSend" disabled>Send</button>
+            </div>
+            <div class="row">
+                <div class="column">
+                    <p>Messages received:</p>
+                    <div id="receivedMessages"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
