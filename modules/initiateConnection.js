@@ -8,7 +8,7 @@ let sendChannel = null;
 /**
  * Attached a listener to the click event on the connect button
  */
-const initialize = () => {
+function initialize() {
     console.log("INITIALIZING UI");
 
     AttachUI({ connectPeers, disconnectPeers, sendMessage });
@@ -29,25 +29,20 @@ async function connectPeers() {
 
 /**
  * Handle status changes for the local side
- * @param {RTCDataChannelEvent} statusChangeEvent
+ * @param {String} channelState - readyState property of the channel
  */
-const sendChannelStatusChange = (statusChangeEvent) => {
-    // Ignore if sendChannel doesn't exist (Can this be triggered without it???)
-    if (!!sendChannel) {
-        const state = sendChannel.readyState;
-
-        if (state === "open")
-            UIEnable();
-        else
-            UIDisable();
-    }
+function sendChannelStatusChange(channelState) {
+    if (channelState === "open")
+        UIEnable();
+    else
+        UIDisable();
 }
 
 /**
  * Handle data messages sent by the remote
  * @param {RTCDataChannelEvent} evt
  */
-const messageReceivedHandler = (evt) => {
+function messageReceivedHandler(evt) {
     MessageReceived(evt.data);
 }
 
@@ -69,16 +64,17 @@ function receiveChannelStatusChange(evt, receiveChannel) {
  * Send a message to the remote
  * @param {String} messageText - String to send
  */
-const sendMessage = (messageText) => {
+function sendMessage(messageText) {
     sendChannel.send(messageText);
 }
 
 /**
  * Remove and clean up the peer connections, and reset the UI
  */
-const disconnectPeers = () => {
-    // Clear the sendChannel for garbage collection
-    ({ sendChannel } = DisconnectPeers());
+function disconnectPeers() {
+    // Clear the messageRemote for garbage collection
+    DisconnectPeers();
+    sendChannel = null;
 
     // Update the UI
     UIDisable();

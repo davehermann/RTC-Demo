@@ -14,10 +14,21 @@ function createLocalConnection(onSendStatusChange) {
 
     // Create a data channel to send data through to the remote
     let sendChannel = localConnection.createDataChannel("sendChannel");
-    sendChannel.onopen = onSendStatusChange;
-    sendChannel.onclose = onSendStatusChange;
+    sendChannel.onopen = (evt) => { sendChannelStatusChange(evt, onSendStatusChange); };
+    sendChannel.onclose = (evt) => { sendChannelStatusChange(evt, onSendStatusChange); };
 
     return { localConnection, sendChannel };
+}
+
+/**
+ * Handler for the change in status of the sending channel
+ * @param {Event} statusChangeEvent - Event data
+ * @param {Function} onChangeHandler - Handler for the readyState
+ */
+function sendChannelStatusChange(statusChangeEvent, onChangeHandler) {
+    // Ignore if sendChannel doesn't exist (Can this be triggered without it???)
+    if (!!sendChannel)
+        onChangeHandler(sendChannel.readyState);
 }
 
 /**
@@ -113,7 +124,6 @@ async function connectPeers({ onSendStatusChange, onReceiveStatusChange, onMessa
 
 /**
  * Disconnect the channels and connections, and clean up
- * @returns {Object} {sendChannel}
  */
 function disconnectPeers() {
     // Close the channels
@@ -129,9 +139,6 @@ function disconnectPeers() {
     receiveChannel = null;
     localConnection = null;
     remoteConnection = null;
-
-    // Return a value of null to clear the sendChannel object
-    return { sendChannel };
 }
 
 export {
