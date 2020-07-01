@@ -1,4 +1,4 @@
-import { btnConnect, btnDisconnect, btnSend, txtMessage, messageReceived, uiDisable, uiEnable } from "./page-objects.js";
+import { AttachUI, MessageReceived, UIDisable, UIEnable } from "./page-objects.js";
 
 // Module variables
 let sendChannel = null,
@@ -10,10 +10,9 @@ let sendChannel = null,
  * Attached a listener to the click event on the connect button
  */
 const initialize = () => {
-    btnConnect.addEventListener("click", connectPeers, false);
-    btnDisconnect.addEventListener("click", disconnectPeers, false);
-    btnSend.addEventListener("click", sendMessage, false);
-    txtMessage.addEventListener("keyup", (evt) => { if (evt.keyCode == 13) sendMessage(); }, false);
+    console.log("INITIALIZING UI");
+
+    AttachUI({ connectPeers, disconnectPeers, sendMessage });
 }
 
 /**
@@ -50,9 +49,9 @@ const sendChannelStatusChange = (statusChangeEvent) => {
         const state = sendChannel.readyState;
 
         if (state === "open")
-            uiEnable();
+            UIEnable();
         else
-            uiDisable();
+            UIDisable();
     }
 }
 
@@ -62,7 +61,7 @@ const sendChannelStatusChange = (statusChangeEvent) => {
  */
 const receiveChannelEstablished = (evt) => {
     receiveChannel = evt.channel;
-    receiveChannel.onmessage = messageReceivedHandler;
+    receiveChannel.onmessage = MessageReceivedHandler;
     receiveChannel.onopen = receiveChannelStatusChange;
     receiveChannel.onclose = receiveChannelStatusChange;
 }
@@ -79,8 +78,8 @@ const addCandidateErrorHandler = (err) => {
  * Handle data messages sent by the remote
  * @param {RTCDataChannelEvent} evt
  */
-const messageReceivedHandler = (evt) => {
-    messageReceived(evt.data);
+const MessageReceivedHandler = (evt) => {
+    MessageReceived(evt.data);
 }
 
 /**
@@ -117,12 +116,12 @@ const offerGeneration = async ({ localConnection, remoteConnection }) => {
     }
 }
 
-const sendMessage = () => {
-    const message = txtMessage.value;
-    sendChannel.send(message);
-
-    txtMessage.value = "";
-    txtMessage.focus();
+/**
+ * Send a message to the remote
+ * @param {String} messageText - String to send
+ */
+const sendMessage = (messageText) => {
+    sendChannel.send(messageText);
 }
 
 const disconnectPeers = () => {
@@ -141,7 +140,7 @@ const disconnectPeers = () => {
     remoteConnection = null;
 
     // Update the UI
-    uiDisable();
+    UIDisable();
 }
 
 export {
