@@ -1,0 +1,6 @@
+.arrange { }
+.column { display: flex; flex-direction: column; }
+.grow { flex-grow: 1; }
+.page_container { display: flex; }
+.row { display: flex; flex-direction: row; }
+.shrink { flex-grow: 0; }
