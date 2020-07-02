@@ -2,5 +2,8 @@
 .column { display: flex; flex-direction: column; }
 .grow { flex-grow: 1; }
 .page_container { display: flex; }
-.row { display: flex; flex-direction: row; }
+.row { display: flex; flex-direction: row; margin-bottom: 1rem; }
 .shrink { flex-grow: 0; }
+
+textarea { min-height: 4rem; min-width: 20rem;}
+textarea.negotiator { min-width: 50rem; min-height: 10rem; }
