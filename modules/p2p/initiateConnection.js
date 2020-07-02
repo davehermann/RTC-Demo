@@ -1,5 +1,3 @@
-// This code background relies on https://github.com/shanet/WebRTC-Example/blob/master/client/webrtc.js
-
 import { divChat, divNegotiateConnection, txtChatEntry, txtRemoteNegotiation, AttachUI, AddClass, DisplayMessage, RemoveClass, ShowNextHandshake } from "./page-objects.js";
 import { Peer } from "./peer.js";
 
@@ -19,7 +17,7 @@ function initialize() {
  * Create a new WebRTC session
  */
 function initiateConnection() {
-    localPeer = new Peer({ logToConsole: false });
+    localPeer = new Peer();
     localPeer.remoteHandshake = sendHandshakeToRemote;
 
     // Data channels

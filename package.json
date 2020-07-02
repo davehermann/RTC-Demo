@@ -9,5 +9,5 @@
     "test": "live-server --port=8081 --no-browser --entry-file=./page.html"
   },
   "author": "Dave Hermann",
-  "license": "ISC"
+  "license": "MIT"
 }
