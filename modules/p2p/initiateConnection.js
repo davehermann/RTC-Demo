@@ -1,125 +1,85 @@
 // This code background relies on https://github.com/shanet/WebRTC-Example/blob/master/client/webrtc.js
 
 import { divChat, divNegotiateConnection, txtChatEntry, txtRemoteNegotiation, AttachUI, AddClass, DisplayMessage, RemoveClass } from "./page-objects.js";
-import { v4 as uuid } from "./uuid.js";
+import { Peer } from "./peer.js";
 
-const _instanceId = uuid();
-const iceServers = [
-    { urls: "stun:stun.l.google.com:19302" },
-];
-
-let peerConnection = null,
-    sendChannel = null,
-    receiveChannel = null;
+/** @type {Peer} */
+let localPeer = null;
 
 function initialize() {
-    console.log("INITIALIZING UI", _instanceId);
+    console.log("INITIALIZING UI");
 
-    AttachUI({ onBtnGenerateOfferClick: initializeLocalConnection, onBtnConsumeOfferClick: consumePeerOffer, onBtnSendChatClick: sendChat });
-}
-
-function sendChat() {
-    let text = (txtChatEntry.value || "").trim();
-
-    if (text.length > 0) {
-        txtChatEntry.value = "";
-
-        if (!!sendChannel) {
-            sendChannel.send(text);
-            DisplayMessage(text);
-        } else
-            alert("No channel open to peer");
-    }
-}
-
-function remoteMessageReceived(evt) {
-    console.log("remote message", evt);
-
-    let messageText = evt.data;
-    DisplayMessage(messageText, true);
-}
-
-function generateConnection(onSendStatusChange) {
-    let newPeer = new RTCPeerConnection({ iceServers });
-    newPeer.onicecandidate = newIceCandidate;
-    newPeer.ondatachannel = (evt) => {
-        receiveChannel = evt.channel;
-        receiveChannel.onmessage = remoteMessageReceived;
-        console.log("remote data channel open", evt);
-    }
-
-    let sendChannel = newPeer.createDataChannel("sendChannel");
-    sendChannel.onopen = (evt) => { sendChannelStatusChange(evt, onSendStatusChange); };
-    sendChannel.onclose = (evt) => { sendChannelStatusChange(evt, onSendStatusChange); };
-
-    return { peerConnection: newPeer, dataChannel: sendChannel };
+    AttachUI({ onBtnGenerateOfferClick: initiateConnection, onBtnConsumeOfferClick: connectionFromOffer, onBtnSendChatClick: sendChatMessage });
 }
 
 /**
- * Handler for the change in status of the sending channel
- * @param {Event} statusChangeEvent - Event data
- * @param {Function} onChangeHandler - Handler for the readyState
+ * Create a new WebRTC session
  */
-function sendChannelStatusChange(statusChangeEvent, onChangeHandler) {
-    let sendChannel = statusChangeEvent.target;
-    onChangeHandler(sendChannel.readyState);
-}
+function initiateConnection() {
+    localPeer = new Peer();
+    localPeer.remoteHandshake = sendHandshakeToRemote;
 
-function newIceCandidate(iceEvent) {
-    // iceEvent.candidate === null means no more ICE candidates
-    if (!!iceEvent.candidate) {
-        signalRemote({ ice: iceEvent.candidate });
-    }
-}
+    // Data channels
+    localPeer.useDataChannel = true;
+    localPeer.dataChannel.outbound_onOpen = outboundChannelStatusChange;
+    localPeer.dataChannel.outbound_onClose = outboundChannelStatusChange;
+    localPeer.dataChannel.inbound_onMessage = messageFromRemote;
 
-function signalRemote({ description, ice }) {
-    console.log({ description, ice });
-    console.log(JSON.stringify({ description, ice, fromId: _instanceId }));
-}
-
-async function generateOffer(connectionToPeer) {
-    try {
-        const offer = await connectionToPeer.createOffer();
-        console.log("local offer", offer);
-        await generateDescription(connectionToPeer, offer);
-    } catch (err) {
-        reportError(err, "creating offer");
-    }
-}
-
-async function generateAnswer(connectionToPeer) {
-    try {
-        const answer = await connectionToPeer.createAnswer();
-        console.log("local answer", answer);
-        await generateDescription(connectionToPeer, answer);
-    } catch (err) {
-        reportError(err, "creating answer");
-    }
-}
-
-async function generateDescription(connectionToPeer, description) {
-    try {
-        await connectionToPeer.setLocalDescription(description);
-        console.log("local description", connectionToPeer.localDescription);
-
-        signalRemote({ description: connectionToPeer.localDescription });
-    } catch (err) {
-        reportError(err, "setting local description");
-    }
-}
-
-function reportError(err, note) {
-    console.error(`EXCEPTION: ${note}`, err);
+    // Initialize for a new connection, including generating an offer
+    localPeer.InitializeConnection();
 }
 
 /**
- * Handle status changes for the local side
- * @param {String} channelState - readyState property of the channel
+ * Respond to connection handshake negotiation
  */
-function dataChannelStatusChange(channelState) {
-    console.log("sendChannel state", channelState);
+async function connectionFromOffer() {
+    const message = (txtRemoteNegotiation.value || "").trim();
 
-    if (channelState == "open") {
+    if (message.length > 0) {
+        // Clear the entry field
+        txtRemoteNegotiation.value = null;
+
+        // Parse the negotiation
+        const negotiation = JSON.parse(message);
+
+        // Create a connection if no connection exists
+        if (!localPeer) {
+            localPeer = new Peer();
+            localPeer.remoteHandshake = sendHandshakeToRemote;
+
+            // Data channels
+            localPeer.useDataChannel = true;
+            localPeer.dataChannel.outbound_onOpen = outboundChannelStatusChange;
+            localPeer.dataChannel.outbound_onClose = outboundChannelStatusChange;
+            localPeer.dataChannel.inbound_onMessage = messageFromRemote;
+
+            // Generate the connection, but not an offer
+            localPeer.GenerateConnection();
+        }
+
+        // Disallow consuming of negotiated connections from itself
+        if (negotiation.fromId == localPeer.connectionId) {
+            alert("Browser can't process message from itself! Make sure to use message from the other browser.");
+            return;
+        }
+
+        // Process the handshake negotiation
+        await localPeer.ConsumeNegotiation(negotiation);
+    }
+
+}
+
+/**
+ * React to the open/close of the outbound data channel
+ * @param {Event} evt
+ */
+function outboundChannelStatusChange(evt) {
+    console.log("outbound status change", evt);
+
+    /** @type {RTCDataChannel} */
+    let channel = evt.target;
+
+    if (channel.readyState == "open") {
         // Hide the negotiating UI
         AddClass(divNegotiateConnection, "inactive");
 
@@ -128,59 +88,44 @@ function dataChannelStatusChange(channelState) {
     }
 }
 
-async function initializeLocalConnection() {
-    // Create a peer connection, with stun servers defined
-    // On ice candidates, we have to provide each candidate to the remote peer
-    // Add a data channel to the local connection
-    // If this is the initiator, create an offer, and set as the connection description, then provide the description to the peer
+/**
+ * Provide handshake signals for use by remote connection
+ * @param {Map} signal
+ * @param {Peer} signal.peer - the current peer connection
+ * @param {RTCSessionDescription} [signal.description] - the offer or answer generated
+ * @param {RTCIceCandidate} [signal.iceCandidate] - the next ICE candidate
+ */
+function sendHandshakeToRemote({ peer, description, iceCandidate }) {
+    // Log the objects passed in
+    console.log({ description, iceCandidate });
 
-    let { peerConnection: newConnection, dataChannel } = generateConnection(dataChannelStatusChange);
-
-    peerConnection = newConnection;
-    sendChannel = dataChannel;
-
-    // This is the initiator, so generate an initial offer
-    await generateOffer(peerConnection);
+    // Log the JSON string to be copied for use on the other end
+    console.log(JSON.stringify({ description, iceCandidate, fromId: peer.connectionId }));
 }
 
-async function consumePeerOffer() {
-    const message = txtRemoteNegotiation.value;
+/**
+ * Send a message via the data channel for the chat UI
+ */
+function sendChatMessage() {
+    let text = (txtChatEntry.value || "").trim();
 
-    if (!!message && (message.length > 0)) {
-        txtRemoteNegotiation.value = null;
+    if (text.length > 0) {
+        // Reset the chat entry
+        txtChatEntry.value = "";
 
-        const offer = JSON.parse(message);
-
-        if (offer.fromId == _instanceId) {
-            alert("Browser can't process message from itself! Make sure to use message from the other browser.");
-            return;
-        }
-
-        // Create a connection if none exists
-        if (!peerConnection) {
-            let { peerConnection: newConnection, dataChannel } = generateConnection(dataChannelStatusChange);
-            peerConnection = newConnection;
-            sendChannel = dataChannel;
-        }
-
-        if (!!offer.description) {
-            try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer.description));
-
-                // Create an answer if the type is "offer"
-                if (offer.description.type == "offer")
-                    await generateAnswer(peerConnection);
-            } catch (err) {
-                reportError(err, "setting remote description");
-            }
-        } else if (!!offer.ice) {
-            try {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(offer.ice));
-            } catch (err) {
-                reportError(err, "adding ice candidate");
-            }
-        }
+        localPeer.dataChannel.Send(text);
+        DisplayMessage(text);
     }
+}
+
+/**
+ * Handle incoming messages
+ * @param {MessageEvent} evt
+ */
+function messageFromRemote(evt) {
+    console.log("remote message", evt);
+
+    DisplayMessage(evt.data, true);
 }
 
 export {
