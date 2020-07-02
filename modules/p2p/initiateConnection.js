@@ -1,6 +1,6 @@
 // This code background relies on https://github.com/shanet/WebRTC-Example/blob/master/client/webrtc.js
 
-import { txtRemoteNegotiation, AttachUI } from "./page-objects.js";
+import { divChat, divNegotiateConnection, txtRemoteNegotiation, AttachUI, AddClass, RemoveClass } from "./page-objects.js";
 import { v4 as uuid } from "./uuid.js";
 
 const _instanceId = uuid();
@@ -33,8 +33,8 @@ function generateConnection(onSendStatusChange) {
  * @param {Function} onChangeHandler - Handler for the readyState
  */
 function sendChannelStatusChange(statusChangeEvent, onChangeHandler) {
-    console.log("data channel status", statusChangeEvent);
-    // onChangeHandler(sendChannel.readyState);
+    let sendChannel = statusChangeEvent.target;
+    onChangeHandler(sendChannel.readyState);
 }
 
 function newIceCandidate(iceEvent) {
@@ -90,6 +90,14 @@ function reportError(err, note) {
  */
 function dataChannelStatusChange(channelState) {
     console.log("sendChannel state", channelState);
+
+    if (channelState == "open") {
+        // Hide the negotiating UI
+        AddClass(divNegotiateConnection, "inactive");
+
+        // Show the chat UI
+        RemoveClass(divChat, "inactive");
+    }
 }
 
 async function initializeLocalConnection() {
