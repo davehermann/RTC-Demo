@@ -1,6 +1,6 @@
 // This code background relies on https://github.com/shanet/WebRTC-Example/blob/master/client/webrtc.js
 
-import { divChat, divNegotiateConnection, txtRemoteNegotiation, AttachUI, AddClass, RemoveClass } from "./page-objects.js";
+import { divChat, divNegotiateConnection, txtChatEntry, txtRemoteNegotiation, AttachUI, AddClass, DisplayMessage, RemoveClass } from "./page-objects.js";
 import { v4 as uuid } from "./uuid.js";
 
 const _instanceId = uuid();
@@ -8,17 +8,45 @@ const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
 ];
 
-let peerConnection = null;
+let peerConnection = null,
+    sendChannel = null,
+    receiveChannel = null;
 
 function initialize() {
     console.log("INITIALIZING UI", _instanceId);
 
-    AttachUI({ onBtnGenerateOfferClick: initializeLocalConnection, onBtnConsumeOfferClick: consumePeerOffer });
+    AttachUI({ onBtnGenerateOfferClick: initializeLocalConnection, onBtnConsumeOfferClick: consumePeerOffer, onBtnSendChatClick: sendChat });
+}
+
+function sendChat() {
+    let text = (txtChatEntry.value || "").trim();
+
+    if (text.length > 0) {
+        txtChatEntry.value = "";
+
+        if (!!sendChannel) {
+            sendChannel.send(text);
+            DisplayMessage(text);
+        } else
+            alert("No channel open to peer");
+    }
+}
+
+function remoteMessageReceived(evt) {
+    console.log("remote message", evt);
+
+    let messageText = evt.data;
+    DisplayMessage(messageText, true);
 }
 
 function generateConnection(onSendStatusChange) {
     let newPeer = new RTCPeerConnection({ iceServers });
     newPeer.onicecandidate = newIceCandidate;
+    newPeer.ondatachannel = (evt) => {
+        receiveChannel = evt.channel;
+        receiveChannel.onmessage = remoteMessageReceived;
+        console.log("remote data channel open", evt);
+    }
 
     let sendChannel = newPeer.createDataChannel("sendChannel");
     sendChannel.onopen = (evt) => { sendChannelStatusChange(evt, onSendStatusChange); };
@@ -106,9 +134,10 @@ async function initializeLocalConnection() {
     // Add a data channel to the local connection
     // If this is the initiator, create an offer, and set as the connection description, then provide the description to the peer
 
-    let { peerConnection: newConnection, sendChannel } = generateConnection(dataChannelStatusChange);
+    let { peerConnection: newConnection, dataChannel } = generateConnection(dataChannelStatusChange);
 
     peerConnection = newConnection;
+    sendChannel = dataChannel;
 
     // This is the initiator, so generate an initial offer
     await generateOffer(peerConnection);
@@ -129,8 +158,9 @@ async function consumePeerOffer() {
 
         // Create a connection if none exists
         if (!peerConnection) {
-            let { peerConnection: newConnection, sendChannel } = generateConnection(dataChannelStatusChange);
+            let { peerConnection: newConnection, dataChannel } = generateConnection(dataChannelStatusChange);
             peerConnection = newConnection;
+            sendChannel = dataChannel;
         }
 
         if (!!offer.description) {
