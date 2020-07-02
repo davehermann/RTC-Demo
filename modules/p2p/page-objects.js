@@ -5,7 +5,9 @@ const
     divNegotiateConnection = document.querySelector("div.page_container.negotiator"),
     divChat = document.querySelector("div.page_container.chat"),
     divChatHistory = document.querySelector(".chat div.history"),
+    divHandshake = document.querySelector("div.send_handshake"),
     txtChatEntry = document.querySelector("textarea.chat_entry"),
+    txtHandshake = divHandshake.querySelector("textarea"),
     txtRemoteNegotiation = document.querySelector("textarea.remote_negotiation")
     ;
 
@@ -13,11 +15,11 @@ function attachUi({ onBtnGenerateOfferClick, onBtnConsumeOfferClick, onBtnSendCh
     btnGenerateOffer.addEventListener("click", onBtnGenerateOfferClick, false);
 
     // Consume offer on enter key
-    txtRemoteNegotiation.addEventListener("keydown", (evt) => { if (evt.keyCode == 13) onBtnSendChatClick(); }, false);
+    txtRemoteNegotiation.addEventListener("keydown", (evt) => { if (evt.keyCode == 13) onBtnConsumeOfferClick(); }, false);
     btnConsumeOffer.addEventListener("click", onBtnConsumeOfferClick, false);
 
     // Send a chat on enter key
-    txtChatEntry.addEventListener("keydown", (evt) => { if (evt.keyCode == 13) onBtnSendChatClick(); }, false);
+    txtChatEntry.addEventListener("keyup", (evt) => { if (evt.keyCode == 13) onBtnSendChatClick(); }, false);
     btnSendChat.addEventListener("click", onBtnSendChatClick, false);
 }
 
@@ -58,6 +60,23 @@ function displayMessage(messageText, fromRemote = false) {
     divChatHistory.appendChild(elRow);
 }
 
+function showNextHandshake(nextHandshake) {
+    if (nextHandshake.length > 0) {
+        removeClass(divHandshake, "inactive");
+
+        txtHandshake.value = nextHandshake.shift();
+        txtHandshake.disabled = false;
+        txtHandshake.focus();
+        txtHandshake.select();
+        document.execCommand("copy");
+        txtHandshake.disabled = true;
+    }
+}
+
+function clearHandshake() {
+
+}
+
 export {
     divChat,
     divNegotiateConnection,
@@ -68,4 +87,5 @@ export {
     addClass as AddClass,
     displayMessage as DisplayMessage,
     removeClass as RemoveClass,
+    showNextHandshake as ShowNextHandshake,
 };

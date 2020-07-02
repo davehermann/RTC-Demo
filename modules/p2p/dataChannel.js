@@ -17,8 +17,8 @@ class DataChannel {
 
         // Default handlers do nothing
         this.inbound_onMessage = () => { this._pc._writeError(new Error("No onmessage defined for receiving channel")); };
-        this.outbound_onClose = () => { this._pc._writeWarning(new Error("No remoteHandshake defined")); };
-        this.outbound_onOpen = () => { this._pc._writeWarning(new Error("No remoteHandshake defined")); };
+        this.outbound_onClose = () => { this._pc._writeWarning("No remoteHandshake defined"); };
+        this.outbound_onOpen = () => { this._pc._writeWarning("No remoteHandshake defined"); };
     }
 
     /**

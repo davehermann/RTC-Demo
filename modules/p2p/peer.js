@@ -8,6 +8,7 @@ const
     _iceServers = new WeakMap(),
     _logToConsole = new WeakMap(),
     _peerConnection = new WeakMap(),
+    _peerConnection_onStateChanged = new WeakMap(),
     _remoteHandshake = new WeakMap()
     ;
 
@@ -32,6 +33,7 @@ class Peer {
         // Set defaults
         this.iceServers = Peer.defaultIceServers;
         this.remoteHandshake = () => { this._writeError(new Error("No remoteHandshake defined")); };
+        this.peerConnection_onStateChanged = () => { this._writeWarning("No connection state change event defined"); }
     }
 
     /**
@@ -69,6 +71,13 @@ class Peer {
      */
     get peerConnection() { return _peerConnection.get(this); }
     set peerConnection(val) { _peerConnection.set(this, val); }
+
+    /**
+     * The connection state has been updated
+     * @return {Function}
+     */
+    get peerConnection_onStateChanged() { return _peerConnection_onStateChanged.get(this); }
+    set peerConnection_onStateChanged(val) { _peerConnection_onStateChanged.set(this, val); }
 
     /**
      * Function that receives a **Map**
@@ -113,6 +122,16 @@ class Peer {
     _writeLog () {
         if (_logToConsole.get(this))
             console.log(...arguments);
+    }
+
+    /**
+     * Fired on the connection state change
+     * @param {Event} connectionStateEvent
+     */
+    _connectionStateChanged (connectionStateEvent) {
+        this._writeLog("connection state changed", connectionStateEvent);
+
+        this.peerConnection_onStateChanged(connectionStateEvent);
     }
 
     /**
@@ -178,6 +197,9 @@ class Peer {
 
         // Define an anonymous handler to prevent the event from binding the wrong "this"
         this.peerConnection.onicecandidate = (iceEvent) => { this._newIceCandidate(iceEvent); };
+
+        // Define an anonymous handler to prevent the event from binding the wrong "this"
+        this.peerConnection.onconnectionstatechange = (connectionStateChangeEvent) => { this._connectionStateChanged(connectionStateChangeEvent); }
 
         if (this.useDataChannel)
             this.dataChannel.ConfigurePeer();

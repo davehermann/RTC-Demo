@@ -5,8 +5,8 @@
 .row { display: flex; flex-direction: row; margin-bottom: 1rem; }
 .shrink { flex-grow: 0; }
 
-/* Hide the chat initially */
-div.page_container.inactive { display: none; }
+/* Hide initially */
+.inactive { display: none; }
 
 textarea { min-height: 4rem; min-width: 20rem;}
 /* Negotiation requires a larger text field */

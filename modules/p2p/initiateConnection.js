@@ -1,10 +1,13 @@
 // This code background relies on https://github.com/shanet/WebRTC-Example/blob/master/client/webrtc.js
 
-import { divChat, divNegotiateConnection, txtChatEntry, txtRemoteNegotiation, AttachUI, AddClass, DisplayMessage, RemoveClass } from "./page-objects.js";
+import { divChat, divNegotiateConnection, txtChatEntry, txtRemoteNegotiation, AttachUI, AddClass, DisplayMessage, RemoveClass, ShowNextHandshake } from "./page-objects.js";
 import { Peer } from "./peer.js";
 
 /** @type {Peer} */
-let localPeer = null;
+let localPeer = null,
+    /** @type {Array<Map>} */
+    nextHandshake = [],
+    handshakeShown = false;
 
 function initialize() {
     console.log("INITIALIZING UI");
@@ -16,7 +19,7 @@ function initialize() {
  * Create a new WebRTC session
  */
 function initiateConnection() {
-    localPeer = new Peer();
+    localPeer = new Peer({ logToConsole: false });
     localPeer.remoteHandshake = sendHandshakeToRemote;
 
     // Data channels
@@ -65,6 +68,8 @@ async function connectionFromOffer() {
 
         // Process the handshake negotiation
         await localPeer.ConsumeNegotiation(negotiation);
+
+        ShowNextHandshake(nextHandshake);
     }
 
 }
@@ -99,8 +104,19 @@ function sendHandshakeToRemote({ peer, description, iceCandidate }) {
     // Log the objects passed in
     console.log({ description, iceCandidate });
 
+    let handshake = JSON.stringify({ description, iceCandidate, fromId: peer.connectionId });
+
+    // Push to the handshake list
+    nextHandshake.push(handshake);
+    // Update the display the first time
+    if (!handshakeShown) {
+        ShowNextHandshake(nextHandshake);
+        handshakeShown = true;
+    }
+
+
     // Log the JSON string to be copied for use on the other end
-    console.log(JSON.stringify({ description, iceCandidate, fromId: peer.connectionId }));
+    console.log(handshake);
 }
 
 /**
