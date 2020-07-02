@@ -68,9 +68,13 @@ async function offerGeneration({ localConnection, remoteConnection }) {
     try {
         const offer = await localConnection.createOffer();
         await localConnection.setLocalDescription(offer);
+        console.log("localDescription", localConnection.localDescription);
 
         await remoteConnection.setRemoteDescription(localConnection.localDescription);
         const answer = await remoteConnection.createAnswer();
+
+        console.log("remoteDescription", remoteConnection.remoteDescription);
+        console.log("remoteAnswer", answer);
 
         await remoteConnection.setLocalDescription(answer);
         await localConnection.setRemoteDescription(remoteConnection.localDescription)
