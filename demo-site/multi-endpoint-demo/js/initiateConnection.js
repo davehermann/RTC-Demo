@@ -1,5 +1,5 @@
 import { divChat, divNegotiateConnection, txtChatEntry, txtRemoteNegotiation, AttachUI, AddClass, DisplayMessage, RemoveClass, ShowNextHandshake } from "./page-objects.js";
-import { Peer } from "./peer.js";
+import { Peer } from "../rtc-module/peer.js";
 
 /** @type {Peer} */
 let localPeer = null,
@@ -60,7 +60,7 @@ async function connectionFromOffer() {
 
         // Disallow consuming of negotiated connections from itself
         if (negotiation.fromId == localPeer.connectionId) {
-            alert("Browser can't process message from itself! Make sure to use message from the other browser.");
+            alert("Browser can't process a signal from itself! Make sure to use signals from the opposite browser.");
             return;
         }
 

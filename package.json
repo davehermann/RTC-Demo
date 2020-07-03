@@ -6,7 +6,7 @@
     "live-server": "^1.2.1"
   },
   "scripts": {
-    "test": "live-server --port=8081 --no-browser --entry-file=./page.html"
+    "test": "node server.js"
   },
   "author": "Dave Hermann",
   "license": "MIT"

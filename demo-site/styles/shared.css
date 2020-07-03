@@ -1,0 +1,16 @@
+/* Layout */
+.arrange { justify-content: space-around; }
+.column { display: flex; flex-direction: column; }
+.grow { flex-grow: 1; }
+.page_container { display: flex; }
+.row { display: flex; flex-direction: row; margin-bottom: 1rem; }
+.row .row { margin-bottom: 0px; }
+.shrink { flex-grow: 0; }
+
+/* Common Elements */
+a { color: mediumblue; text-decoration: none; }
+a:hover { color: cornflowerblue; }
+
+h1 { margin: 0px; }
+hr { margin: 0.5em 0px; align-self: stretch; }
+.subtitle { color: grey; font-size: 1.25em; }
